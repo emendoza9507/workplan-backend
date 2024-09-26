@@ -16,7 +16,7 @@ export class PeriodService {
     } catch(error) {
       if(error instanceof Prisma.PrismaClientKnownRequestError) {
         if(error.code === "P2002") {
-          throw new ConflictException(`User with name: ${createPeriodDto.name} already exists`);
+          throw new ConflictException(`Period with name: ${createPeriodDto.name} already exists`);
         }
       }
 
