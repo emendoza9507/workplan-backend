@@ -22,7 +22,7 @@ type Message = {
 
 type ChanneMessage = {
     to: string,
-    from: string,
+    from: User,
     message: string
 }
 
@@ -50,10 +50,11 @@ export class WebsocketGateway {
     }
 
     @SubscribeMessage('message')
-    async message(@ConnectedSocket() client: Socket, @MessageBody() data: string) {
+    async message(@ConnectedSocket() client: Socket, @MessageBody() data: ChanneMessage) {
+        console.log(client.id)
         const message: Message = {
-            from: this.globalChannel[client.id],
-            text: data,
+            from: data.from,
+            text: data.message,
             createdAt: new Date
         }
 
@@ -122,5 +123,7 @@ export class WebsocketGateway {
         delete this.globalChannel[client.id]
 
         this.server.emit('user.disconnect', client.id)
+
+        console.log('entro')
     }
 }
