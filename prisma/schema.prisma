@@ -8,21 +8,23 @@ datasource db {
 }
 
 model User {
-  id              Int        @id @default(autoincrement())
+  id              Int                  @id @default(autoincrement())
   name            String
   lastname        String
-  username        String     @unique
-  email           String     @unique
+  username        String               @unique
+  email           String               @unique
   password        String
   profileImage    String?
   avatarImage     String?
   immediateBossId Int?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
   Activity        Activity[]
-  immediateBoss   User?      @relation("BossWorker", fields: [immediateBossId], references: [id])
-  workers         User[]     @relation("BossWorker")
+  immediateBoss   User?                @relation("BossWorker", fields: [immediateBossId], references: [id])
+  workers         User[]               @relation("BossWorker")
   WorkPlan        WorkPlan[]
+  messages        Message[]
+  chats           Chat[]
 }
 
 model Period {
@@ -57,3 +59,22 @@ model Activity {
   createdByUser User     @relation(fields: [createdBy], references: [id])
   workPlan      WorkPlan @relation(fields: [workPlanId], references: [id])
 }
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  text      String
+  senderId  Int
+  createdAt DateTime @default(now())
+  sender    User     @relation(fields: [senderId], references: [id])
+  chatId    Int
+  chat      Chat     @relation(fields: [chatId], references: [id])
+}
+
+model Chat {
+  id           Int                  @id @default(autoincrement())
+  participants User[]
+  messages      Message[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
