@@ -37,10 +37,28 @@ export class ChatService {
                         }
                     },
                     include: {
-                        messages: true
+                        messages: {
+                            include: {
+                                file: true
+                            }
+                        }
                     }
                 },
             }
         })).chats[0];
+    }
+
+    async findById(id: number) {
+        return this.prismaService.chat.findUnique({
+            where: { id },
+            include: {
+                participants: true,
+                messages: {
+                    include: {
+                        file: true
+                    }
+                }
+            }
+        })
     }
 }

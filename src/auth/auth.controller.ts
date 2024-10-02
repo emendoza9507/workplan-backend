@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, Request, UseGuards }
 import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
 import { Public } from './decorators/public.decorator';
+import { SignUpDto } from './dto/sign-up.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -12,6 +13,12 @@ export class AuthController {
     @Post('login')
     signIn(@Body() signInDto: Record<string, any>) {
         return this.authService.signIn(signInDto.username, signInDto.password);
+    }
+
+    @Public()
+    @Post('signup')
+    signUp(@Body() signInDto: SignUpDto) {
+        return this.authService.signUp(signInDto);
     }
 
     @UseGuards(AuthGuard)

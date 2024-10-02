@@ -8,20 +8,20 @@ datasource db {
 }
 
 model User {
-  id              Int                  @id @default(autoincrement())
+  id              Int        @id @default(autoincrement())
   name            String
   lastname        String
-  username        String               @unique
-  email           String               @unique
+  username        String     @unique
+  email           String     @unique
   password        String
   profileImage    String?
   avatarImage     String?
   immediateBossId Int?
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
   Activity        Activity[]
-  immediateBoss   User?                @relation("BossWorker", fields: [immediateBossId], references: [id])
-  workers         User[]               @relation("BossWorker")
+  immediateBoss   User?      @relation("BossWorker", fields: [immediateBossId], references: [id])
+  workers         User[]     @relation("BossWorker")
   WorkPlan        WorkPlan[]
   messages        Message[]
   chats           Chat[]
@@ -68,13 +68,22 @@ model Message {
   sender    User     @relation(fields: [senderId], references: [id])
   chatId    Int
   chat      Chat     @relation(fields: [chatId], references: [id])
+  file      File?
+}
+
+model File {
+  id        Int     @id @default(autoincrement())
+  filename  String
+  path      String
+  mimetype  String
+  message   Message @relation(fields: [messageId], references: [id])
+  messageId Int     @unique
 }
 
 model Chat {
-  id           Int                  @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   participants User[]
-  messages      Message[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  messages     Message[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
-

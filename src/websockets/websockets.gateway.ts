@@ -12,6 +12,9 @@ import { map } from 'rxjs/operators';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
+import { ChatService } from 'src/chat/services/chat.service';
+import { CreateMessagetDto } from 'src/chat/dto/create-message.dto';
+import { MessageService } from 'src/chat/services/message.service';
 
 type Message = {
     to?: User
@@ -35,6 +38,8 @@ type ChanneMessage = {
 export class WebsocketGateway {
     constructor(
         private prismaService: PrismaService,
+        private chatService: ChatService,
+        private messageService: MessageService,
         private jwtService: JwtService
     ) { }
 
@@ -80,50 +85,31 @@ export class WebsocketGateway {
         }
     }
 
+    @SubscribeMessage('chat:join')
+    handleChatJoin(@ConnectedSocket() client: Socket, @MessageBody() chatId: string) {
+        client.join(chatId)
+        console.log('Client joined to chat: '+chatId)
+    }
+
+    @SubscribeMessage('chat:send:message')
+    async handleMessageOnChatRoom(@ConnectedSocket() client: Socket, @MessageBody() payload: { chatId: string, userId: string, text: string }) {
+        const messageDto: CreateMessagetDto = { chatId: +payload.chatId, senderId: +payload.userId, text: payload.text }
+        const message = await this.messageService.create(messageDto);
+        this.server.to(payload.chatId).emit('chat:resive:message', message);
+    }
 
     @SubscribeMessage('user.connect')
-    async newUser(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
-        try {
-            const userChecked = await this.jwtService.verifyAsync(data.access_token, {
-                secret: process.env.JWT_SECRET
-            });
-
-            if (userChecked) {
-                const user = await this.prismaService.user.findUnique({
-                    where: { id: userChecked.id }
-                })
-
-                const findUser = Object.values(this.globalChannel).find((u) => u.id === user.id);
-
-                if (!findUser) {
-                    this.globalChannel[client.id] = { ...user, socketId: client.id }
-
-                    client.broadcast.emit('user.connect', this.globalChannel[client.id])
-                }
-            }
-        } catch (error) {
-            console.log(error)
-        }
+    async newUser(@ConnectedSocket() client: Socket, @MessageBody() data: any) {                  
+        this.server.to('global').emit('user.connect', data)        
     }
 
     async handleConnection(client: Socket) {
-        const user = this.jwtService.decode(client.handshake.auth.token)
-        // console.log(client.id)
-        if(user !== null) {
-        //     console.log('entro')
-            this.chanelMessage[client.id] = { ...user, socketId: client.id }
-            
-        //     // client.broadcast.emit('user.connect', user)
-        }
-        // return client.broadcast.emit('user.connect', this.chanelMessage[client.id])        
+        client.join('global')
     }
 
 
-    handleDisconnect(client: Socket) {
+    handleDisconnect(client: Socket, ...arg) {
         delete this.globalChannel[client.id]
-
-        this.server.emit('user.disconnect', client.id)
-
-        console.log('entro')
+        this.server.emit('user.disconnect', client.id, arg)
     }
 }

@@ -47,6 +47,14 @@ export class UsersService {
     });
   }
 
+  async findByUsernameOrEmail(criteria: {username: string, email: string}) {
+    return await this.prismaService.user.findFirst({
+      where: {
+        OR: [ { username: criteria.username }, { email: criteria.email } ]
+      }
+    })
+  }
+
   async update(id: number, updateUserDto: UpdateUserDto) {
     const userUpdated = await this.prismaService.user.update({
       where: { id },
