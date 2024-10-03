@@ -1,14 +1,13 @@
 import {
     ConnectedSocket,
     MessageBody,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
     SubscribeMessage,
     WebSocketGateway,
     WebSocketServer,
-    WsResponse,
 } from '@nestjs/websockets';
 import { Server, Socket } from "socket.io"
-import { from, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -30,28 +29,56 @@ type ChanneMessage = {
 }
 
 
+class GlobalChannel {
+    constructor ( private users: { [key: string]: User } ) {}
+
+    addUser(key: string, user: User) {
+        this.users[key] = user;
+    }
+
+    getUserByKey(key: string) {
+        return this.users[key];
+    }
+
+    getUserById(id: number) {
+        return Object.values(this.users).find(u => u.id === id);
+    }
+    
+    getAll() {
+        return Object.entries(this.users)
+    }
+
+    removeUser(key: string) {
+        const user = {...this.users[key]}
+        delete this.users[key];
+        return [key, user]
+    }
+}
+
 @WebSocketGateway({
     cors: {
         origin: '*',
     },
 })
-export class WebsocketGateway {
+export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
+    protected globalChannel: GlobalChannel = new GlobalChannel({})
+    
     constructor(
         private prismaService: PrismaService,
         private chatService: ChatService,
         private messageService: MessageService,
         private jwtService: JwtService
-    ) { }
+    ) { 
+        
+    }
 
     @WebSocketServer()
     server: Server;
 
-    globalChannel: { [key: string]: User & { socketId: string } } = {}
-
     @SubscribeMessage('user.list')
     findAll(@MessageBody() data: any) {
 
-        return Object.values(this.globalChannel);
+        return this.globalChannel.getAll();
     }
 
     @SubscribeMessage('message')
@@ -88,7 +115,7 @@ export class WebsocketGateway {
     @SubscribeMessage('chat:join')
     handleChatJoin(@ConnectedSocket() client: Socket, @MessageBody() chatId: string) {
         client.join(chatId)
-        console.log('Client joined to chat: '+chatId)
+        console.log(`Client ${client.id} joined to chat: `+chatId)
     }
 
     @SubscribeMessage('chat:send:message')
@@ -98,18 +125,21 @@ export class WebsocketGateway {
         this.server.to(payload.chatId).emit('chat:resive:message', message);
     }
 
-    @SubscribeMessage('user.connect')
-    async newUser(@ConnectedSocket() client: Socket, @MessageBody() data: any) {                  
-        this.server.to('global').emit('user.connect', data)        
+    @SubscribeMessage('join.global')
+    async newUser(@ConnectedSocket() client: Socket, @MessageBody() data: any) { 
+        client.join('global')
+        // client.emit('join.global', this.globalChannel.getAll())            ;
+        this.globalChannel.addUser(client.id, data)      
+        this.server.to('global').emit('join.global', this.globalChannel.getAll())        
     }
 
     async handleConnection(client: Socket) {
-        client.join('global')
+            
     }
 
 
-    handleDisconnect(client: Socket, ...arg) {
-        delete this.globalChannel[client.id]
-        this.server.emit('user.disconnect', client.id, arg)
+    handleDisconnect(@ConnectedSocket() client: Socket) {
+        let user =  this.globalChannel.removeUser(client.id)
+        this.server.to('global').emit('out.global', this.globalChannel.getAll())
     }
 }

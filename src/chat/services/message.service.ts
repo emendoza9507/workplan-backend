@@ -11,7 +11,10 @@ export class MessageService {
     async create(createMessageDto: CreateMessagetDto) {
         try {
             return await this.prismaService.message.create({
-                data: createMessageDto
+                data: createMessageDto,
+                include: {
+                    sender: true
+                }
             })
         } catch(error) {
             throw error

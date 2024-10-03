@@ -2,5 +2,9 @@
   {
     "type": "sqlite",
     "path": "/home/cmd/apps/workplan/workplan-backend/prisma/dev.db"
+  },
+  {
+    "type": "sqlite",
+    "path": "/home/cmd/apps/workplans/backend/prisma/dev.db"
   }
 ]
