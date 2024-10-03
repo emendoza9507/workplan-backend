@@ -95,7 +95,6 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
     @SubscribeMessage('channel:message')
     async chanelMessage(@ConnectedSocket() client: Socket, @MessageBody() data: ChanneMessage) {
-        console.log(this.globalChannel[client.id])
         try {
             const message: Message = {
                 to: await this.prismaService.user.findUnique({ where: { id: +data.to } }),
@@ -123,6 +122,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
         const messageDto: CreateMessagetDto = { chatId: +payload.chatId, senderId: +payload.userId, text: payload.text }
         const message = await this.messageService.create(messageDto);
         this.server.to(payload.chatId).emit('chat:resive:message', message);
+        this.server.emit('chat:resive:notification', message)
     }
 
     @SubscribeMessage('join.global')
@@ -139,7 +139,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
 
     handleDisconnect(@ConnectedSocket() client: Socket) {
-        let user =  this.globalChannel.removeUser(client.id)
+        this.globalChannel.removeUser(client.id)
         this.server.to('global').emit('out.global', this.globalChannel.getAll())
     }
 }

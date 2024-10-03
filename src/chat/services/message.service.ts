@@ -13,7 +13,12 @@ export class MessageService {
             return await this.prismaService.message.create({
                 data: createMessageDto,
                 include: {
-                    sender: true
+                    sender: true,
+                    chat: {
+                        include: {
+                            participants: true
+                        }
+                    }
                 }
             })
         } catch(error) {

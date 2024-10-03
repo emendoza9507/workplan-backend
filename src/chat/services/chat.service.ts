@@ -26,25 +26,21 @@ export class ChatService {
     }
 
     async findOne(participants: User[]) {
-        return (await this.prismaService.user.findFirst({
+        return await this.prismaService.chat.findFirst({
+            where: {
+                participants: {
+                    every: { id: { in: participants.map(u => +u.id) } }
+                }
+            },
             include: {
-                chats: {
-                    where: {
-                        participants: {
-                            every: { id: { in: participants.map(u => u.id) } },                            
-                        }
-                    },
+                messages: {
                     include: {
-                        messages: {
-                            include: {
-                                sender: true,
-                                file: true
-                            }
-                        }
+                        sender: true,
+                        file: true
                     }
-                },
+                }
             }
-        })).chats[0];
+        })
     }
 
     async findById(id: number) {
