@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ChatService } from './services/chat.service';
 import { CreateChatDto } from './dto/create-chat.dto';
@@ -18,6 +18,11 @@ export class ChatController {
         }
 
         return chat;
+    }
+
+    @Get(':chatId')
+    async findOne(@Param('chatId') chatId: number, @Query('page') page: number) {
+        return await this.chatService.findById(+chatId, page);
     }
 
     @Get()

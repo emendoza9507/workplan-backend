@@ -25,7 +25,7 @@ export class ChatService {
         return this.prismaService.chat.findMany();
     }
 
-    async findOne(participants: User[]) {
+    async findOne(participants: User[], page: number = 1) {
         return await this.prismaService.chat.findFirst({
             where: {
                 participants: {
@@ -34,6 +34,8 @@ export class ChatService {
             },
             include: {
                 messages: {
+                    take: -10 ,
+                    skip: 10 * (page - 1),
                     include: {
                         sender: true,
                         file: true
@@ -43,12 +45,14 @@ export class ChatService {
         })
     }
 
-    async findById(id: number) {
+    async findById(id: number, page: number = 1) {
         return this.prismaService.chat.findUnique({
             where: { id },
             include: {
                 participants: true,
                 messages: {
+                    take: -10 ,
+                    skip: 10 * (page - 1),
                     include: {
                         sender: true,
                         file: true

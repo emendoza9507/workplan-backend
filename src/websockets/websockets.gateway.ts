@@ -83,7 +83,6 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
     @SubscribeMessage('message')
     async message(@ConnectedSocket() client: Socket, @MessageBody() data: ChanneMessage) {
-        console.log(client.id)
         const message: Message = {
             from: data.from,
             text: data.message,
@@ -122,7 +121,12 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
         const messageDto: CreateMessagetDto = { chatId: +payload.chatId, senderId: +payload.userId, text: payload.text }
         const message = await this.messageService.create(messageDto);
         this.server.to(payload.chatId).emit('chat:resive:message', message);
-        this.server.emit('chat:resive:notification', message)
+        
+        this.globalChannel.getAll().forEach(([socketId, user]) => {
+            if(socketId !== client.id) {
+                this.server.to(socketId).emit('chat:resive:notification', message)
+            }
+        })
     }
 
     @SubscribeMessage('join.global')
@@ -130,11 +134,12 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
         client.join('global')
         // client.emit('join.global', this.globalChannel.getAll())            ;
         this.globalChannel.addUser(client.id, data)      
-        this.server.to('global').emit('join.global', this.globalChannel.getAll())        
+        this.server.to('global').emit('join.global', this.globalChannel.getAll())    
+        
     }
 
-    async handleConnection(client: Socket) {
-            
+    async handleConnection(@ConnectedSocket() client: Socket) {
+        
     }
 
 
