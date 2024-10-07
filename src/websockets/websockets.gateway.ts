@@ -77,7 +77,6 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
     @SubscribeMessage('user.list')
     findAll(@MessageBody() data: any) {
-
         return this.globalChannel.getAll();
     }
 

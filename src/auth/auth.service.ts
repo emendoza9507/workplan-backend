@@ -23,8 +23,10 @@ export class AuthService {
 
         const payload = { sub: user.id, ...result };
 
+        const token = await this.jwtService.signAsync(payload, {expiresIn: '9999 years'});
+
         return {
-            access_token: await this.jwtService.signAsync(payload),
+            access_token: token,
             ...result
         };
     }
